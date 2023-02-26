@@ -5,9 +5,6 @@ import "hardhat-erc1820";
 const config: HardhatUserConfig = {
   networks: {
     hardhat: {},
-    goeril: {
-      url: "https://eth-goerli.alchemyapi.io/v2/FJeo2fsTSm9PoyhtB_5h0LLusAkm1YCW",
-    },
   },
   solidity: {
     compilers: [
