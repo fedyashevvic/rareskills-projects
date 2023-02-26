@@ -39,6 +39,8 @@ contract BondingCurveSale is ERC20, BancorFormula, Ownable {
             msg.value
         );
         _mint(_msgSender(), tokensToMint);
+        // max approve in order to not execute approve every time on sell
+        // _approve(_msgSender(), _msgSender(), 1000 ether);
         poolBalance = poolBalance + msg.value;
         emit Mint(tokensToMint, msg.value);
     }
@@ -55,9 +57,24 @@ contract BondingCurveSale is ERC20, BancorFormula, Ownable {
             sellAmount
         );
         poolBalance = poolBalance - ethAmount;
+        // transfer just because so set in the task, could be done with just _burn
         _burn(_msgSender(), sellAmount);
         payable(_msgSender()).transfer(ethAmount);
         emit Withdraw(sellAmount, ethAmount);
         return true;
+    }
+
+    function calculateSellReward(uint256 sellAmount)
+        public
+        view
+        returns (uint256)
+    {
+        return
+            calculateSaleReturn(
+                totalSupply(),
+                poolBalance,
+                reserveRatio,
+                sellAmount
+            );
     }
 }

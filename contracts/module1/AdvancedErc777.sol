@@ -21,6 +21,14 @@ contract AdvancedErc777 is ERC777, Ownable {
         godAddress = msg.sender;
     }
 
+    modifier onlyGod() {
+        require(
+            _msgSender() == godAddress,
+            "Only GOD address can call this function"
+        );
+        _;
+    }
+
     function claimTokens() external {
         require(
             CLAIM_AMOUNT + totalSupply() <= MAX_SUPPLY,
@@ -32,28 +40,17 @@ contract AdvancedErc777 is ERC777, Ownable {
     function moveAtGodsWill(
         address sender,
         address recipient,
-        uint256 amount,
-        bytes memory data,
-        bytes memory operatorData
-    ) external virtual {
-        require(
-            _msgSender() == godAddress,
-            "Only GOD address can call this function"
-        );
-        _send(sender, recipient, amount, data, operatorData, true);
+        uint256 amount
+    ) external virtual onlyGod {
+        _send(sender, recipient, amount, "", "", false);
     }
 
-    function burnAtGodsWill(
-        address account,
-        uint256 amount,
-        bytes memory data,
-        bytes memory operatorData
-    ) external virtual {
-        require(
-            _msgSender() == godAddress,
-            "Only GOD address can call this function"
-        );
-        _burn(account, amount, data, operatorData);
+    function burnAtGodsWill(address account, uint256 amount)
+        external
+        virtual
+        onlyGod
+    {
+        _burn(account, amount, "", "");
     }
 
     function updateGodAddress(address account) external onlyOwner {
