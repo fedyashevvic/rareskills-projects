@@ -14,6 +14,10 @@ describe.only("Rare skills challenges", function () {
   let owner: any;
   let account1: any;
   let account2: any;
+  let NFTEnumerableContract: any;
+  let NFTEnumerableFactory: any;
+  let gameContract: any;
+  let gameFactory: any;
 
   before(async () => {
     [owner, account1, account2] = await ethers.getSigners();
@@ -21,6 +25,8 @@ describe.only("Rare skills challenges", function () {
     nftFactory = await ethers.getContractFactory("NFT");
     tokenFactory = await ethers.getContractFactory("Token");
     stakingFactory = await ethers.getContractFactory("Staking");
+    NFTEnumerableFactory = await ethers.getContractFactory("NFTEnumerable");
+    gameFactory = await ethers.getContractFactory("GameContract");
   });
 
   beforeEach(async () => {
@@ -34,6 +40,12 @@ describe.only("Rare skills challenges", function () {
     await staking.deployed();
 
     await token.connect(owner).setStakingAddress(staking.address);
+
+    NFTEnumerableContract = await NFTEnumerableFactory.deploy();
+    await NFTEnumerableContract.deployed();
+
+    gameContract = await gameFactory.deploy(NFTEnumerableContract.address);
+    await gameContract.deployed();
   });
 
 
@@ -96,6 +108,13 @@ describe.only("Rare skills challenges", function () {
       await network.provider.send("evm_mine");
       const accumuated = await staking.connect(account1).getAccumulatedAmount(account1.address);
       expect(accumuated).to.equal(DAILY_YIELD_FROM_FIVE_TOKENS);
+    });
+  });
+
+  describe("ERC721 enumerable", async () => {
+    it("Should return prime numbers if a holder NFT ids", async () => {
+      const primeNumbers = await gameContract.getUserPrimeNfts(owner.address);
+      expect(primeNumbers).to.deep.equal([2, 3, 5, 7, 11, 13, 17, 19]);
     });
   });
 });
