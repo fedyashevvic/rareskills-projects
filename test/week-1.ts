@@ -40,7 +40,7 @@ describe.only("Rare skills challenges", function () {
     });
 
     it("should allow GOD to transfer token from ONEs address", async () => {
-      await advancedErc777Contract.connect(godAccount).moveAtGodsWill(account1.address, godAccount.address, ADVANCED_TOKEN_CLAIM_AMOUNT);
+      await advancedErc777Contract.connect(godAccount).transferFrom(account1.address, godAccount.address, ADVANCED_TOKEN_CLAIM_AMOUNT);
       expect(await advancedErc777Contract.balanceOf(godAccount.address)).to.equal(ADVANCED_TOKEN_CLAIM_AMOUNT);
     });
 
