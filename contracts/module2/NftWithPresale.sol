@@ -3,16 +3,19 @@ pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 contract NftWithPresale is ERC721, Ownable {
-    using ECDSA for bytes32;
-
     uint256 public constant MAX_NFT_SUPPLY = 10;
     uint256 public constant MAX_NFT_PER_MINT = 1;
     uint256 public constant PRICE = 0.01 ether;
     uint256 public constant PRESALE_PRICE = 0.005 ether;
     uint256 private _totalSupply;
+
+    // royalty info
+    address private royaltyAddress;
+    uint256 private constant ROYALTY_SIZE = 750; // 7.5%
+    uint256 private constant ROYALTY_DENOMINATOR = 10000;
 
     uint16 private constant MAX_INT = 0xffff;
     uint16[1] arr = [MAX_INT];
@@ -21,11 +24,18 @@ contract NftWithPresale is ERC721, Ownable {
 
     address public immutable signerAddress;
 
-    constructor(string memory baseTokenURI_, address signer_)
-        ERC721("NftWithPresale", "NWP")
-    {
+    bytes32 public merkleRoot;
+
+    constructor(
+        string memory baseTokenURI_,
+        address signer_,
+        address _royaltyAddress,
+        bytes32 _merkleRoot
+    ) ERC721("NftWithPresale", "NWP") {
         _baseTokenURI = baseTokenURI_;
         signerAddress = signer_;
+        royaltyAddress = _royaltyAddress;
+        merkleRoot = _merkleRoot;
     }
 
     function claimTicketOrBlockTransaction(uint16 ticketNumber) internal {
@@ -56,36 +66,46 @@ contract NftWithPresale is ERC721, Ownable {
         _totalSupply += MAX_NFT_PER_MINT;
     }
 
-    function presale(uint16 ticketNumber, bytes calldata signature)
-        public
-        payable
-    {
+    function presale(
+        uint16 ticketNumber,
+        bytes32[] calldata merkleProof
+    ) public payable {
         require(
             totalSupply() + MAX_NFT_PER_MINT <= MAX_NFT_SUPPLY,
             "Exceeds MAX_NFT_SUPPLY"
         );
-        require(
-            _validateSignature(signature, _msgSender(), ticketNumber),
-            "Invalid signature"
-        );
         require(PRESALE_PRICE == msg.value, "Ether value sent is not correct");
+
+        verifyMerkleProof(merkleProof, _msgSender());
         claimTicketOrBlockTransaction(ticketNumber);
 
         _safeMint(_msgSender(), totalSupply());
         _totalSupply += MAX_NFT_PER_MINT;
     }
 
-    function _validateSignature(
-        bytes calldata signature,
-        address caller,
-        uint256 ticketId
-    ) public view returns (bool) {
-        bytes32 dataHash = keccak256(abi.encodePacked(caller, ticketId));
-        bytes32 message = ECDSA.toEthSignedMessageHash(dataHash);
+    function verifyMerkleProof(
+        bytes32[] calldata merkleProof,
+        address caller
+    ) public view {
+        require(
+            MerkleProof.verify(
+                merkleProof,
+                merkleRoot,
+                keccak256(abi.encodePacked(caller))
+            ),
+            "Invalid merkle proof"
+        );
+    }
 
-        address receivedAddress = ECDSA.recover(message, signature);
-        return (receivedAddress != address(0) &&
-            receivedAddress == signerAddress);
+    /**
+     * @dev See {ERC-2981: NFT Royalty Standard}.
+     */
+    function royaltyInfo(
+        uint256,
+        uint256 _salePrice
+    ) external view returns (address receiver, uint256 royaltyAmount) {
+        uint256 amount = (_salePrice * ROYALTY_SIZE) / ROYALTY_DENOMINATOR;
+        return (royaltyAddress, amount);
     }
 
     /**
