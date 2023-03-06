@@ -2,10 +2,13 @@
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 contract NftWithPresale is ERC721, Ownable {
+    using Strings for uint256;
+
     uint256 public constant MAX_NFT_SUPPLY = 10;
     uint256 public constant MAX_NFT_PER_MINT = 1;
     uint256 public constant PRICE = 0.01 ether;
@@ -112,5 +115,16 @@ contract NftWithPresale is ERC721, Ownable {
      */
     function _baseURI() internal view override returns (string memory) {
         return _baseTokenURI;
+    }
+
+    /**
+     * @dev See {IERC721Metadata-tokenURI}.
+     */
+    function tokenURI(
+        uint256 tokenId
+    ) public view virtual override returns (string memory) {
+        _requireMinted(tokenId);
+        return
+            string(abi.encodePacked(_baseURI(), tokenId.toString(), ".json"));
     }
 }
