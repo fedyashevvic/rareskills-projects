@@ -22,18 +22,14 @@ contract NftWithPresale is ERC721, Ownable {
 
     string private _baseTokenURI;
 
-    address public immutable signerAddress;
-
-    bytes32 public merkleRoot;
+    bytes32 public immutable merkleRoot;
 
     constructor(
         string memory baseTokenURI_,
-        address signer_,
         address _royaltyAddress,
         bytes32 _merkleRoot
     ) ERC721("NftWithPresale", "NWP") {
         _baseTokenURI = baseTokenURI_;
-        signerAddress = signer_;
         royaltyAddress = _royaltyAddress;
         merkleRoot = _merkleRoot;
     }
@@ -76,7 +72,7 @@ contract NftWithPresale is ERC721, Ownable {
         );
         require(PRESALE_PRICE == msg.value, "Ether value sent is not correct");
 
-        verifyMerkleProof(merkleProof, _msgSender());
+        verifyMerkleProof(merkleProof, ticketNumber, _msgSender());
         claimTicketOrBlockTransaction(ticketNumber);
 
         _safeMint(_msgSender(), totalSupply());
@@ -85,13 +81,14 @@ contract NftWithPresale is ERC721, Ownable {
 
     function verifyMerkleProof(
         bytes32[] calldata merkleProof,
+        uint16 ticketNumber,
         address caller
     ) public view {
         require(
             MerkleProof.verify(
                 merkleProof,
                 merkleRoot,
-                keccak256(abi.encodePacked(caller))
+                keccak256(abi.encodePacked(caller, ticketNumber))
             ),
             "Invalid merkle proof"
         );
