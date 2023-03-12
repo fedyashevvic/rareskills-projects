@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -9,7 +10,7 @@ interface IToken is IERC20 {
 
 pragma solidity ^0.8.7;
 
-contract Staking is Ownable {
+contract Staking is Ownable, IERC721Receiver {
     uint256 public constant SECONDS_IN_DAY = 24 * 60 * 60;
     uint256 public constant DIVIDER = 1000;
     uint256 public constant baseYield = 10 ether;
@@ -32,6 +33,8 @@ contract Staking is Ownable {
     event Claim(address indexed staker, uint256 tokensAmount);
 
     constructor(address _nftAddress, address _tokenAddress) {
+        require(_nftAddress != address(0), "NFT address is zero");
+        require(_tokenAddress != address(0), "Token address is zero");
         nftAddress = _nftAddress;
         tokenAddress = _tokenAddress;
     }
@@ -81,22 +84,19 @@ contract Staking is Ownable {
 
     function _claim(address staker) internal {
         Staker storage user = _stakers[staker];
-        uint256 accumulatedAmount = (((block.timestamp - user.lastCheckpoint) *
-            baseYield) / SECONDS_IN_DAY) * user.tokensStaked;
+        uint256 accumulatedAmount = ((((block.timestamp - user.lastCheckpoint) *
+            baseYield) * user.tokensStaked) / SECONDS_IN_DAY);
         user.lastCheckpoint = uint128(block.timestamp);
         IToken(tokenAddress).mint(staker, accumulatedAmount);
         emit Claim(staker, accumulatedAmount);
     }
 
-    function getAccumulatedAmount(address staker)
-        external
-        view
-        returns (uint256)
-    {
+    function getAccumulatedAmount(
+        address staker
+    ) external view returns (uint256) {
         Staker memory user = _stakers[staker];
-        return
-            (((block.timestamp - user.lastCheckpoint) * baseYield) /
-                SECONDS_IN_DAY) * user.tokensStaked;
+        return ((((block.timestamp - user.lastCheckpoint) * baseYield) *
+            user.tokensStaked) / SECONDS_IN_DAY);
     }
 
     function ownerOf(uint256 tokenId) public view returns (address) {
@@ -108,7 +108,7 @@ contract Staking is Ownable {
         address,
         uint256,
         bytes calldata
-    ) external pure returns (bytes4) {
+    ) external pure override returns (bytes4) {
         return
             bytes4(
                 keccak256("onERC721Received(address,address,uint256,bytes)")

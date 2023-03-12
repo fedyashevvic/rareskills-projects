@@ -3,7 +3,9 @@
   "scripts": {
     "test": "hardhat test",
     "deploy": "npx hardhat --network goeril run",
-    "verify": "npx hardhat verify --network goeril"
+    "verify": "npx hardhat verify --network goeril",
+    "slither": "python3 -m slither . --triage",
+    "coverage": "npx hardhat coverage"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^2.0.1",
@@ -17,6 +19,7 @@
     "dotenv": "^16.0.3",
     "hardhat-erc1820": "^0.1.0",
     "keccak256": "^1.0.6",
-    "merkletreejs": "^0.3.9"
+    "merkletreejs": "^0.3.9",
+    "solidity-coverage": "^0.8.2"
   }
 }

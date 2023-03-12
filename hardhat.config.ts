@@ -3,6 +3,8 @@ require("@nomiclabs/hardhat-etherscan");
 import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import "hardhat-erc1820";
+import 'solidity-coverage'
+
 
 const config: HardhatUserConfig = {
   networks: {

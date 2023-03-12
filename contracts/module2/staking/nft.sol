@@ -9,10 +9,10 @@ contract NFT is ERC721 {
 
     constructor() ERC721("NFT", "NFT") {}
 
-    function claim() public payable {
+    function claim() public {
         for (uint256 i = 0; i < NFT_PER_MINT; i++) {
-            _mint(_msgSender(), _totalSupply);
-            _totalSupply++;
+            _mint(_msgSender(), _totalSupply + i);
         }
+        _totalSupply += NFT_PER_MINT;
     }
 }

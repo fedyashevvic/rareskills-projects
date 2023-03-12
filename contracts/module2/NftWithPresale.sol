@@ -32,6 +32,7 @@ contract NftWithPresale is ERC721, Ownable {
         address _royaltyAddress,
         bytes32 _merkleRoot
     ) ERC721("NftWithPresale", "NWP") {
+        require(_royaltyAddress != address(0), "Royalty address is zero");
         _baseTokenURI = baseTokenURI_;
         royaltyAddress = _royaltyAddress;
         merkleRoot = _merkleRoot;

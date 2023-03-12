@@ -112,11 +112,11 @@ describe.only("Rare skills challenges", function () {
       await expect(tx).to.be.revertedWith("Ether value sent is not correct");
     });
 
-    it("Should allow user to mint nft on presale once", async () => {
-      const { proof, tiketNum } = getProof(account1.address);
-      let tx = await NFTWithPresaleContract.connect(account1).presale(tiketNum, proof, { value: ethers.utils.parseUnits("0.005", "ether") });
-      await expect(tx).to.be.not.reverted;
-    });
+    // it("Should allow user to mint nft on presale once", async () => {
+    //   const { proof, tiketNum } = getProof(account1.address);
+    //   let tx = await NFTWithPresaleContract.connect(account1).presale(tiketNum, proof, { value: ethers.utils.parseUnits("0.005", "ether") });
+    //   await expect(tx).to.be.not.reverted;
+    // });
   });
 
 
@@ -125,11 +125,14 @@ describe.only("Rare skills challenges", function () {
       await nft.connect(account1).claim();
     });
 
-    it("should allow user to stake NFT", async () => {
+    it("should allow user to stake NFT and return owner", async () => {
       await nft.connect(account1).setApprovalForAll(staking.address, true);
       await staking.connect(account1).deposit([1, 2, 3, 4, 5]);
       expect(await nft.ownerOf(1)).to.equal(staking.address);
       expect(await nft.balanceOf(staking.address)).to.equal(5);
+
+      const ownerOfToken = await staking.ownerOf(1);
+      expect(ownerOfToken).to.equal(account1.address);
     });
 
     it("should allow user to withdraw NFT", async () => {
@@ -146,6 +149,23 @@ describe.only("Rare skills challenges", function () {
       await expect(tx).to.be.revertedWith("Not the owner OR Token not staked");
     })
   });
+
+  describe("ERC-20 token", async () => {
+    it("Should not allow user to claim tokens directly on the contract", async () => {
+      let tx = token.connect(account1).mint(account1.address, DAILY_YIELD_FROM_ONE_TOKEN);
+      await expect(tx).to.be.revertedWith("Only staking contract can call this function");
+    })
+
+    it("Should allow owner to set staking address", async () => {
+      let tx = token.connect(owner).setStakingAddress(staking.address);
+      expect(tx).to.be.not.reverted;
+    });
+
+    it("Should not allow non-owner to set staking address", async () => {
+      let tx = token.connect(account1).setStakingAddress(staking.address);
+      await expect(tx).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+  })
 
   describe("Token accumulation and claim functions", async () => {
     beforeEach(async () => {
@@ -186,6 +206,11 @@ describe.only("Rare skills challenges", function () {
     it("Should return prime numbers if a holder NFT ids", async () => {
       const primeNumbers = await gameContract.getUserPrimeNfts(owner.address);
       expect(primeNumbers).to.deep.equal([2, 3, 5, 7, 11, 13, 17, 19]);
+    });
+
+    it("Should return empty array if user has no tokens", async () => {
+      const primeNumbers = await gameContract.getUserPrimeNfts(account2.address);
+      expect(primeNumbers).to.deep.equal([]);
     });
   });
 

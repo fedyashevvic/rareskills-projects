@@ -4,7 +4,7 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
 
 contract GameContract {
-    IERC721Enumerable public nftContract;
+    IERC721Enumerable public immutable nftContract;
 
     constructor(address _nftContract) {
         require(
